@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Interaktif Menjodohkan - Pendidikan Pancasila</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .selected-left {
+            border-color: #3b82f6 !important;
+            background-color: #eff6ff !important;
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
+        .selected-right {
+            border-color: #10b981 !important;
+            background-color: #ecfdf5 !important;
+            box-shadow: 0 0 0 2px #10b981;
+        }
+        .matched-pair {
+            opacity: 0.7;
+            background-color: #f3f4f6;
+            border-color: #d1d5db;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-red-600 text-white p-2 rounded-lg font-bold text-lg">
+                    <i class="fas fa-balance-scale"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-white leading-tight">Kuis Menjodohkan Pancasila</h1>
+                    <p class="text-xs text-slate-400">Level: Sangat Sulit (Analisis Tingkat Tinggi)</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="bg-slate-700 px-3 py-1.5 rounded-full text-xs font-semibold text-slate-300">
+                    Soal <span id="current-q-num" class="text-amber-400 font-bold">1</span> / 20
+                </div>
+                <div class="bg-slate-700 px-3 py-1.5 rounded-full text-xs font-semibold text-slate-300">
+                    Skor: <span id="total-score" class="text-emerald-400 font-bold">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 flex flex-col justify-between">
+
+        <!-- Question Navigation Bar -->
+        <div id="quiz-nav" class="flex flex-wrap gap-1.5 mb-6 bg-slate-800/60 p-3 rounded-xl border border-slate-700 justify-center">
+            <!-- Nav buttons inserted via JS -->
+        </div>
+
+        <!-- Question Card -->
+        <div id="question-card" class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl flex-1 flex flex-col">
+            
+            <!-- Header Soal -->
+            <div class="mb-4">
+                <span id="topic-tag" class="text-[10px] font-bold tracking-wider uppercase bg-red-950/80 text-red-400 px-2.5 py-1 rounded-md border border-red-800/50">
+                    Sejarah Perumusan Pancasila
+                </span>
+                <h2 id="question-title" class="text-base md:text-lg font-bold text-white mt-2 leading-relaxed">
+                    Petunjuk Soal
+                </h2>
+                <p class="text-xs text-slate-400 mt-1">
+                    <i class="fas fa-info-circle text-amber-400 mr-1"></i> Klik satu pernyataan di <b>Kolom A</b>, kemudian klik pasangannya yang sesuai di <b>Kolom B</b>.
+                </p>
+            </div>
+
+            <!-- Matching Grid Area -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-4 flex-1">
+                
+                <!-- Kolom Left (Pernyataan) -->
+                <div class="space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-blue-400 mb-2 border-b border-blue-900/50 pb-1 flex justify-between">
+                        <span>Kolom A (Pernyataan/Tokoh)</span>
+                    </h3>
+                    <div id="left-column" class="space-y-2.5">
+                        <!-- Left items generated JS -->
+                    </div>
+                </div>
+
+                <!-- Kolom Right (Pasangan) -->
+                <div class="space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2 border-b border-emerald-900/50 pb-1">
+                        <span>Kolom B (Pilihan Pasangan)</span>
+                    </h3>
+                    <div id="right-column" class="space-y-2.5">
+                        <!-- Right items generated JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Temporary Match Status / Reset Pair Button -->
+            <div class="flex justify-between items-center mt-2 pt-3 border-t border-slate-700/60">
+                <button id="reset-matches-btn" class="text-xs text-slate-400 hover:text-white transition flex items-center gap-1">
+                    <i class="fas fa-undo"></i> Atur Ulang Pilihan Nomor Ini
+                </button>
+                <button id="submit-question-btn" disabled class="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold px-5 py-2.5 rounded-xl transition shadow-lg flex items-center gap-2">
+                    <span>Selesaikan Soal Ini & Liha Pembahasan</span>
+                    <i class="fas fa-check-circle"></i>
+                </button>
+            </div>
+
+            <!-- Answer Key & Discussion Box (Hidden by Default) -->
+            <div id="discussion-box" class="hidden mt-6 p-5 bg-slate-900/90 border border-amber-500/40 rounded-xl space-y-3 animate-fade-in">
+                <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-key text-amber-400"></i>
+                        <h4 class="font-bold text-amber-300 text-sm">Kunci Jawaban & Hasil Evaluasi</h4>
+                    </div>
+                    <span id="score-badge" class="text-xs font-bold px-2.5 py-1 rounded bg-slate-800 text-emerald-400 border border-emerald-500/30">
+                        Skor Soal Ini: 100%
+                    </span>
+                </div>
+
+                <!-- Correct Pairs List -->
+                <div id="correct-pairs-list" class="text-xs space-y-1.5 text-slate-300 font-mono">
+                    <!-- Dynamic Answer Key -->
+                </div>
+
+                <!-- Discussion Text -->
+                <div class="mt-3 pt-2 border-t border-slate-800">
+                    <h5 class="text-xs font-bold text-slate-200 mb-1 flex items-center gap-1">
+                        <i class="fas fa-book-open text-blue-400"></i> Pembahasan Analitis:
+                    </h5>
+                    <p id="discussion-text" class="text-xs text-slate-300 leading-relaxed">
+                        <!-- Dynamic discussion -->
+                    </p>
+                </div>
+
+                <div class="pt-2 flex justify-end">
+                    <button id="next-q-btn" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition flex items-center gap-2">
+                        <span>Lanjut ke Soal Berikutnya</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        const quizData = [
+            {
+                id: 1,
+                topic: "Sejarah Perumusan Pancasila",
+                title: "Pasangkanlah nama tokoh perumus dasar negara dengan pokok pikiran utama yang disampaikan pada sidang BPUPKI pertama (29 Mei - 1 Juni 1945):",
+                left: [
+                    { id: "L1", text: "Mohammad Yamin" },
+                    { id: "L2", text: "Mr. Soepomo" },
+                    { id: "L3", text: "Ir. Soekarno" }
+                ],
+                right: [
+                    { id: "R1", text: "Internasionalisme atau Peri Kemanusiaan" },
+                    { id: "R2", text: "Paham Negara Integralistik" },
+                    { id: "R3", text: "Peri Kebangsaan, Peri Kemanusiaan, Peri Ketuhanan" }
+                ],
+                key: { "L1": "R3", "L2": "R2", "L3": "R1" },
+                discussion: "Mohammad Yamin (29 Mei) mengusulkan Peri Kebangsaan & Peri Kemanusiaan. Mr. Soepomo (31 Mei) mengemukakan Paham Negara Integralistik. Ir. Soekarno (1 Juni) mencetuskan Internasionalisme/Peri Kemanusiaan dalam pidato Pancasila."
+            },
+            {
+                id: 2,
+                topic: "Makna Sila-sila Pancasila",
+                title: "Pasangkanlah fenomena sosial berikut dengan sila Pancasila yang paling tepat sebagai dasar penyelesaiannya:",
+                left: [
+                    { id: "L1", text: "Menghargai hasil karya orang lain sebagai bentuk apresiasi hak milik." },
+                    { id: "L2", text: "Tidak memaksakan kehendak kepada orang lain dalam forum pengambilan keputusan." },
+                    { id: "L3", text: "Mengembangkan sikap tenggang rasa dan tidak semena-mena terhadap sesama." }
+                ],
+                right: [
+                    { id: "R1", text: "Sila Kedua (Kemanusiaan yang Adil dan Beradab)" },
+                    { id: "R2", text: "Sila Keempat (Kerakyatan yang Dipimpin oleh Hikmat...)" },
+                    { id: "R3", text: "Sila Kelima (Keadilan Sosial bagi Seluruh Rakyat Indonesia)" }
+                ],
+                key: { "L1": "R3", "L2": "R2", "L3": "R1" },
+                discussion: "Menghargai karya orang lain adalah butir Sila ke-5. Tidak memaksakan kehendak adalah esensi musyawarah Sila ke-4. Sikap tenggang rasa merujuk pada prinsip keadaban kemanusiaan Sila ke-2."
+            },
+            {
+                id: 3,
+                topic: "Pancasila sebagai Ideologi",
+                title: "Pasangkanlah karakteristik ideologi berikut dengan jenis ideologi yang sesuai:",
+                left: [
+                    { id: "L1", text: "Falsafah dan cita-citanya digali dari kekayaan rohani dan budaya masyarakat sendiri." },
+                    { id: "L2", text: "Bersifat totaliter dan cenderung menuntut kepatuhan mutlak tanpa kritik." },
+                    { id: "L3", text: "Nilainya tidak operasional langsung, melainkan butuh penjabaran instrumen perundang-undangan." }
+                ],
+                right: [
+                    { id: "R1", text: "Karakteristik Ideologi Terbuka" },
+                    { id: "R2", text: "Karakteristik Ideologi Tertutup" },
+                    { id: "R3", text: "Karakteristik Ideologi Liberal" }
+                ],
+                key: { "L1": "R1", "L2": "R2", "L3": "R1" },
+                discussion: "Ideologi terbuka bersumber dari konsensus masyarakat sendiri dan butuh penjabaran instrumental. Ideologi tertutup bersifat totaliter dan dipaksakan elite penguasa."
+            },
+            {
+                id: 4,
+                topic: "Identitas Nasional",
+                title: "Pasangkanlah elemen identitas nasional berikut dengan kategori klasifikasi identitas yang tepat:",
+                left: [
+                    { id: "L1", text: "Pancasila sebagai dasar filsafat negara (Philosofische Grondslag)." },
+                    { id: "L2", text: "Bendera Merah Putih dan Lagu Kebangsaan Indonesia Raya." },
+                    { id: "L3", text: "Kondisi wilayah Indonesia sebagai negara kepulauan (Archipelago)." }
+                ],
+                right: [
+                    { id: "R1", text: "Identitas Fundamental" },
+                    { id: "R2", text: "Identitas Instrumental" },
+                    { id: "R3", text: "Identitas Alamiah" }
+                ],
+                key: { "L1": "R1", "L2": "R2", "L3": "R3" },
+                discussion: "Pancasila adalah Identitas Fundamental. Simbol seperti bendera, bahasa, dan lagu kebangsaan adalah Identitas Instrumental. Kondisi geografis wilayah kepulauan adalah Identitas Alamiah."
+            },
+            {
+                id: 5,
+                topic: "Kedudukan & Fungsi Pancasila",
+                title: "Pasangkanlah fungsi Pancasila berikut dengan definisi/makna operasional yang paling sesuai:",
+                left: [
+                    { id: "L1", text: "Pancasila sebagai Dasar Negara." },
+                    { id: "L2", text: "Pancasila sebagai Pandangan Hidup." },
+                    { id: "L3", text: "Pancasila sebagai Perjanjian Luhur." }
+                ],
+                right: [
+                    { id: "R1", text: "Sebagai pedoman atau penuntun arah dalam kehidupan sehari-hari masyarakat." },
+                    { id: "R2", text: "Sebagai sumber dari segala sumber hukum penyelenggaraan negara." },
+                    { id: "R3", text: "Sebagai kesepakatan bersama para pendiri bangsa yang wajib dijunjung tinggi." }
+                ],
+                key: { "L1": "R2", "L2": "R1", "L3": "R3" },
+                discussion: "Dasar Negara berposisi sebagai sumber dari segala sumber hukum. Pandangan hidup berfungsi sebagai pedoman etis masyarakat. Perjanjian luhur merujuk pada konsensus nasional para pendiri bangsa."
+            },
+            {
+                id: 6,
+                topic: "Sejarah BPUPK",
+                title: "Pasangkanlah tokoh pendiri bangsa berikut dengan inti gagasan yang disampaikan pada sidang BPUPK:",
+                left: [
+                    { id: "L1", text: "Mohammad Yamin (29 Mei 1945)" },
+                    { id: "L2", text: "Mr. Soepomo (31 Mei 1945)" },
+                    { id: "L3", text: "Ir. Soekarno (1 Juni 1945)" }
+                ],
+                right: [
+                    { id: "R1", text: "Paham Negara Integralistik / Kekeluargaan" },
+                    { id: "R2", text: "Prinsip Kebangsaan Indonesia (Nasionalisme)" },
+                    { id: "R3", text: "Asas Peri Kebangsaan, Peri Kemanusiaan, Peri Ketuhanan" }
+                ],
+                key: { "L1": "R3", "L2": "R1", "L3": "R2" },
+                discussion: "Mohammad Yamin mengusulkan 5 asas termasuk Peri Kebangsaan & Kemanusiaan. Soepomo menekankan Paham Negara Integralistik. Soekarno mencetuskan prinsip Kebangsaan Indonesia sebagai sila pertama usulannya."
+            },
+            {
+                id: 7,
+                topic: "Implementasi Pancasila",
+                title: "Pasangkanlah kasus sosial berikut dengan implementasi sila Pancasila yang tepat sebagai solusinya:",
+                left: [
+                    { id: "L1", text: "Mengutamakan musyawarah mufakat dalam pembagian Bansos untuk mencegah gesekan." },
+                    { id: "L2", text: "Mengembangkan sikap tenggang rasa dan menjaga etika di media sosial." },
+                    { id: "L3", text: "Memberikan akses pendidikan yang setara bagi anak-anak di daerah 3T." }
+                ],
+                right: [
+                    { id: "R1", text: "Sila Kedua (Kemanusiaan yang Adil dan Beradab)" },
+                    { id: "R2", text: "Sila Keempat (Kerakyatan yang Dipimpin oleh Hikmat...)" },
+                    { id: "R3", text: "Sila Kelima (Keadilan Sosial bagi Seluruh Rakyat Indonesia)" }
+                ],
+                key: { "L1": "R2", "L2": "R1", "L3": "R3" },
+                discussion: "Musyawarah mufakat adalah ciri Sila ke-4. Sikap tenggang rasa di media sosial mencerminkan keadaban Sila ke-2. Akses pendidikan setara di daerah 3T wujud keadilan sosial Sila ke-5."
+            },
+            {
+                id: 8,
+                topic: "Komparasi Ideologi",
+                title: "Pasangkanlah karakteristik ideologi berikut dengan jenis ideologi yang sesuai:",
+                left: [
+                    { id: "L1", text: "Menitikberatkan kebebasan individu mutlak dan persaingan pasar bebas." },
+                    { id: "L2", text: "Menekankan penghapusan kelas sosial dan kepemilikan kolektif oleh negara." },
+                    { id: "L3", text: "Menyeimbangkan hak asasi dengan kewajiban asasi dalam bingkai Ketuhanan." }
+                ],
+                right: [
+                    { id: "R1", text: "Ideologi Pancasila" },
+                    { id: "R2", text: "Ideologi Liberalisme" },
+                    { id: "R3", text: "Ideologi Sosialisme / Komunisme" }
+                ],
+                key: { "L1": "R2", "L2": "R3", "L3": "R1" },
+                discussion: "Liberalisme fokus pada individu. Sosialisme/Komunisme pada kepemilikan kolektif negara. Pancasila menyeimbangkan hak individu dan kewajiban sosial dalam bingkai religiusitas."
+            },
+            {
+                id: 9,
+                topic: "Landasan Konstitusional",
+                title: "Pasangkanlah identitas nasional berikut dengan landasan pasal UUD NRI 1945 yang mengaturnya:",
+                left: [
+                    { id: "L1", text: "Bendera Sang Merah Putih" },
+                    { id: "L2", text: "Bahasa Indonesia sebagai bahasa persatuan" },
+                    { id: "L3", text: "Lagu Kebangsaan Indonesia Raya" }
+                ],
+                right: [
+                    { id: "R1", text: "Pasal 35 UUD 1945" },
+                    { id: "R2", text: "Pasal 36 UUD 1945" },
+                    { id: "R3", text: "Pasal 36B UUD 1945" }
+                ],
+                key: { "L1": "R1", "L2": "R2", "L3": "R3" },
+                discussion: "Bab XV UUD 1945 mengatur Bendera (Pasal 35), Bahasa Negara (Pasal 36), dan Lagu Kebangsaan (Pasal 36B)."
+            },
+            {
+                id: 10,
+                topic: "Tata Kelola Negara",
+                title: "Pasangkanlah fungsi Pancasila berikut dengan contoh konkret penerapannya dalam kebijakan pemerintah:",
+                left: [
+                    { id: "L1", text: "Pancasila sebagai Sumber dari Segala Sumber Hukum" },
+                    { id: "L2", text: "Pancasila sebagai Ideologi Terbuka" },
+                    { id: "L3", text: "Pancasila sebagai Dasar Negara" }
+                ],
+                right: [
+                    { id: "R1", text: "Pengujian materiil Undang-Undang terhadap Pancasila/UUD oleh MK." },
+                    { id: "R2", text: "Penyerapan regulasi teknologi digital tanpa menghilangkan nilai lokal." },
+                    { id: "R3", text: "Landasan utama merumuskan arah tujuan pembangunan jangka panjang." }
+                ],
+                key: { "L1": "R1", "L2": "R2", "L3": "R3" },
+                discussion: "Pengujian UU oleh MK memastikan aturan tidak menentang Pancasila. Ideologi terbuka merespons disrupsi digital secara adaptif-selektif. Dasar negara menjadi landasan RPJPN."
+            },
+            {
+                id: 11,
+                topic: "Sistematika Dasar Negara",
+                title: "Jodohkanlah pokok pemikiran usulan dasar negara berikut dengan tokoh perumusnya:",
+                left: [
+                    { id: "L1", text: "Kebangsaan, Internasionalisme, Mufakat, Kesejahteraan Sosial, Ketuhanan." },
+                    { id: "L2", text: "Persatuan, Kekeluargaan, Keseimbangan Lahir Batin, Musyawarah, Keadilan." },
+                    { id: "L3", text: "Peri Kebangsaan, Peri Kemanusiaan, Peri Ketuhanan, Peri Kerakyatan, Kesejahteraan." }
+                ],
+                right: [
+                    { id: "R1", text: "Ir. Soekarno" },
+                    { id: "R2", text: "Mr. Soepomo" },
+                    { id: "R3", text: "Mr. Mohammad Yamin" }
+                ],
+                key: { "L1": "R1", "L2": "R2", "L3": "R3" },
+                discussion: "Urutan historis pidato usulan dasar negara BPUPKI: Mohammad Yamin (29 Mei), Mr. Soepomo (31 Mei), dan Ir. Soekarno (1 Juni 1945)."
+            },
+            {
+                id: 12,
+                topic: "Tantangan Era Digital",
+                title: "Pasangkanlah tantangan era digital berikut dengan penguatan nilai sila Pancasila yang tepat sebagai solusinya:",
+                left: [
+                    { id: "L1", text: "Meningkatnya radikalisme berkedok doktrin eksklusif di media sosial." },
+                    { id: "L2", text: "Maraknya aksi cyberbullying yang merendahkan martabat manusia." },
+                    { id: "L3", text: "Penyebaran ujaran kebencian SARA yang mengancam integrasi." }
+                ],
+                right: [
+                    { id: "R1", text: "Sila Pertama (Ketuhanan Yang Maha Esa)" },
+                    { id: "R2", text: "Sila Kedua (Kemanusiaan yang Adil dan Beradab)" },
+                    { id: "R3", text: "Sila Ketiga (Persatuan Indonesia)" }
+                ],
+                key: { "L1": "R1", "L2": "R2", "L3": "R3" },
+                discussion: "Sila ke-1 menanamkan religiositas inklusif-toleran. Sila ke-2 menegakkan etika kesopanan dan harkat manusia. Sila ke-3 menangkal polarisasi SARA."
+            },
+            {
+                id: 13,
+                topic: "Sifat Ideologi Negara",
+                title: "Pasangkanlah karakteristik ideologi berikut dengan jenis ideologinya:",
+                left: [
+                    { id: "L1", text: "Nilai dan cita-citanya tidak dipaksakan, melainkan digali dari tradisi masyarakat." },
+                    { id: "L2", text: "Bersifat totaliter dan membatasi kebebasan warga demi kepentingan elite penguasa." },
+                    { id: "L3", text: "Memiliki nilai instrumen dinamis yang dapat disesuaikan dengan tuntutan zaman." }
+                ],
+                right: [
+                    { id: "R1", text: "Ideologi Terbuka" },
+                    { id: "R2", text: "Ideologi Tertutup" },
+                    { id: "R3", text: "Ideologi Pragmatis" }
+                ],
+                key: { "L1": "R1", "L2": "R2", "L3": "R1" },
+                discussion: "Ideologi terbuka digali dari konsensus masyarakat sendiri dan memiliki fleksibilitas nilai instrumental. Ideologi tertutup bersifat totaliter."
+            },
+            {
+                id: 14,
+                topic: "Faktor Pembentuk Identitas",
+                title: "Jodohkanlah faktor pembentuk identitas nasional berikut dengan contoh manifestasinya di Indonesia:",
+                left: [
+                    { id: "L1", text: "Faktor Primordial" },
+                    { id: "L2", text: "Faktor Sakral" },
+                    { id: "L3", text: "Faktor Tokoh" }
+                ],
+                right: [
+                    { id: "R1", text: "Ikatan kekerabatan, kesamaan suku bangsa, daerah asal, dan bahasa." },
+                    { id: "R2", text: "Kesamaan ideologi dasar negara atau keyakinan agama yang diakui." },
+                    { id: "R3", text: "Kepemimpinan figur karismatik seperti Soekarno sebagai simbol pemersatu." }
+                ],
+                key: { "L1": "R1", "L2": "R2", "L3": "R3" },
+                discussion: "Primordial berdasarkan keturunan/suku/asal usul. Sakral diikat kesamaan agama/ideologi. Tokoh diwujudkan lewat kepemimpinan pemersatu."
+            },
+            {
+                id: 15,
+                topic: "Kedudukan Hukum Pancasila",
+                title: "Pasangkanlah doktrin istilah hukum Pancasila berikut dengan pengertian yuridisnya:",
+                left: [
+                    { id: "L1", text: "Staatsfundamentalnorm" },
+                    { id: "L2", text: "Cita Hukum (Rechtsidee)" },
+                    { id: "L3", text: "Sumber dari segala sumber hukum" }
+                ],
+                right: [
+                    { id: "R1", text: "Norma dasar negara yang bersifat kokoh, tetap, dan tidak dapat diubah." },
+                    { id: "R2", text: "Bintang penandu yang memberikan arah dalam pembentukan hukum nasional." },
+                    { id: "R3", text: "Materi muatan peraturan hukum tidak boleh bertentangan dengan Pancasila." }
+                ],
+                key: { "L1": "R1", "L2": "R2", "L3": "R3" },
+                discussion: "Staatsfundamentalnorm berarti norma dasar puncak negara. Cita Hukum adalah kompas pengarah hukum. Sumber dari segala sumber hukum berarti kriteria pembatalan aturan yang bertentangan."
+            },
+            {
+                id: 16,
+                topic: "Pidato BPUPKI",
+                title: "Pasangkanlah tokoh pendiri bangsa berikut dengan fokus pokok pikiran yang diusulkan:",
+                left: [
+                    { id: "L1", text: "Mr. Mohammad Yamin" },
+                    { id: "L2", text: "Prof. Dr. Soepomo" },
+                    { id: "L3", text: "Ir. Soekarno" }
+                ],
+                right: [
+                    { id: "R1", text: "Mengusulkan 5 Asas Pembangunan secara lisan dan tertulis." },
+                    { id: "R2", text: "Menekankan teori Integralistik dan menolak paham individualisme Barat." },
+                    { id: "R3", text: "Memaparkan rumusan 5 Asas dasar yang diberi nama Pancasila." }
+                ],
+                key: { "L1": "R1", "L2": "R2", "L3": "R3" },
+                discussion: "Yamin menyampaikan usulan lisan dan tertulis. Soepomo mengkritik individualisme Barat dan menawarkan Paham Integralistik. Soekarno memberi nama Pancasila pada pidato 1 Juni 1945."
+            },
+            {
+                id: 17,
+                topic: "Diagnosa Kasus Sila",
+                title: "Pasangkanlah fenomena sosial berikut dengan bentuk pelanggaran sila Pancasila yang paling sesuai:",
+                left: [
+                    { id: "L1", text: "Maraknya kasus perundungan (bullying) dan diskriminasi fisik di sekolah." },
+                    { id: "L2", text: "Munculnya aksi separatisme yang hendak memisahkan diri dari NKRI." },
+                    { id: "L3", text: "Penyimpangan alokasi Bansos miskin untuk kepentingan pribadi." }
+                ],
+                right: [
+                    { id: "R1", text: "Pelanggaran Sila Kedua (Kemanusiaan yang Adil dan Beradab)" },
+                    { id: "R2", text: "Pelanggaran Sila Ketiga (Persatuan Indonesia)" },
+                    { id: "R3", text: "Pelanggaran Sila Kelima (Keadilan Sosial bagi Seluruh Rakyat)" }
+                ],
+                key: { "L1": "R1", "L2": "R2", "L3": "R3" },
+                discussion: "Bullying merendahkan martabat manusia (Sila 2). Separatisme merusak keutuhan NKRI (Sila 3). Korupsi Bansos merenggut hak kesejahteraan rakyat miskin (Sila 5)."
+            },
+            {
+                id: 18,
+                topic: "Klasifikasi Elemen Identitas",
+                title: "Pasangkanlah elemen identitas nasional berikut dengan kategori klasifikasinya:",
+                left: [
+                    { id: "L1", text: "Pancasila sebagai dasar filsafat negara" },
+                    { id: "L2", text: "Bendera Merah Putih dan Bahasa Indonesia" },
+                    { id: "L3", text: "Kondisi wilayah geografis kepulauan Indonesia" }
+                ],
+                right: [
+                    { id: "R1", text: "Identitas Fundamental" },
+                    { id: "R2", text: "Identitas Instrumental" },
+                    { id: "R3", text: "Identitas Alamiah" }
+                ],
+                key: { "L1": "R1", "L2": "R2", "L3": "R3" },
+                discussion: "Pancasila berkedudukan sebagai Identitas Fundamental, Bendera/Bahasa sebagai Identitas Instrumental, dan Letak Kepulauan sebagai Identitas Alamiah."
+            },
+            {
+                id: 19,
+                topic: "Dimensi Nilai Ideologi",
+                title: "Pasangkanlah jenis nilai dalam ideologi Pancasila berikut dengan karakteristik utamanya:",
+                left: [
+                    { id: "L1", text: "Nilai Dasar" },
+                    { id: "L2", text: "Nilai Instrumental" },
+                    { id: "L3", text: "Nilai Praksis" }
+                ],
+                right: [
+                    { id: "R1", text: "Prinsip yang bersifat tetap, terkandung dalam Pembukaan UUD 1945." },
+                    { id: "R2", text: "Penjabaran arahan kebijakan berupa perundang-undangan formal." },
+                    { id: "R3", text: "Realisasi konkret nilai Pancasila dalam tindakan nyata sehari-hari." }
+                ],
+                key: { "L1": "R1", "L2": "R2", "L3": "R3" },
+                discussion: "Nilai Dasar bersifat konstan/aksiomatik. Nilai Instrumental dijabarkan dalam aturan hukum. Nilai Praksis adalah pengamalan riil di lapangan."
+            },
+            {
+                id: 20,
+                topic: "Konsekuensi Kedudukan Pancasila",
+                title: "Pasangkanlah status kedudukan Pancasila berikut dengan definisi operasional yuridisnya:",
+                left: [
+                    { id: "L1", text: "Pancasila sebagai Sumber dari Segala Sumber Hukum" },
+                    { id: "L2", text: "Pancasila sebagai Pandangan Hidup (Weltanschauung)" },
+                    { id: "L3", text: "Pancasila sebagai Cita-cita dan Tujuan Bangsa" }
+                ],
+                right: [
+                    { id: "R1", text: "Setiap isi materi peraturan hukum tidak boleh bertentangan dengan Pancasila." },
+                    { id: "R2", text: "Menjadi kompas moral penuntun perilaku seluruh warga negara." },
+                    { id: "R3", text: "Target dan visi strategis mewujudkan masyarakat adil dan makmur." }
+                ],
+                key: { "L1": "R1", "L2": "R2", "L3": "R3" },
+                discussion: "Sumber hukum bermakna kriteria keabsahan UU. Pandangan hidup penuntun etis bermasyarakat. Cita-cita bangsa menjadi target visi pembangunan jangka panjang."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userMatches = {}; // Stores { "L1": "R2", ... }
+        let selectedLeftId = null;
+        let selectedRightId = null;
+        let totalScoreSum = 0;
+        let answeredQuestions = new Set();
+
+        // DOM Elements
+        const quizNav = document.getElementById("quiz-nav");
+        const currentQNum = document.getElementById("current-q-num");
+        const totalScoreEl = document.getElementById("total-score");
+        const topicTag = document.getElementById("topic-tag");
+        const questionTitle = document.getElementById("question-title");
+        const leftColumn = document.getElementById("left-column");
+        const rightColumn = document.getElementById("right-column");
+        const submitBtn = document.getElementById("submit-question-btn");
+        const resetBtn = document.getElementById("reset-matches-btn");
+        const discussionBox = document.getElementById("discussion-box");
+        const correctPairsList = document.getElementById("correct-pairs-list");
+        const discussionText = document.getElementById("discussion-text");
+        const scoreBadge = document.getElementById("score-badge");
+        const nextQBtn = document.getElementById("next-q-btn");
+
+        // Shuffle helper
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // Initialize Quiz Navigation Bar
+        function initNav() {
+            quizNav.innerHTML = "";
+            quizData.forEach((q, idx) => {
+                const btn = document.createElement("button");
+                btn.className = `w-8 h-8 rounded-lg text-xs font-bold transition flex items-center justify-center border ${
+                    idx === currentQuestionIndex 
+                        ? "bg-amber-500 text-slate-950 border-amber-400 font-extrabold scale-110 shadow" 
+                        : "bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700"
+                }`;
+                btn.innerText = idx + 1;
+                btn.onclick = () => loadQuestion(idx);
+                quizNav.appendChild(btn);
+            });
+        }
+
+        // Load Question
+        function loadQuestion(index) {
+            currentQuestionIndex = index;
+            const q = quizData[index];
+
+            // Reset current question UI state
+            userMatches = {};
+            selectedLeftId = null;
+            selectedRightId = null;
+            discussionBox.classList.add("hidden");
+            submitBtn.disabled = true;
+
+            currentQNum.innerText = q.id;
+            topicTag.innerText = q.topic;
+            questionTitle.innerText = q.title;
+
+            initNav();
+
+            // Render Left Column
+            leftColumn.innerHTML = "";
+            q.left.forEach(item => {
+                const card = document.createElement("div");
+                card.id = `left-${item.id}`;
+                card.className = "p-3 bg-slate-800/90 border border-slate-700 rounded-xl text-xs text-slate-200 cursor-pointer hover:border-blue-500 transition flex justify-between items-center";
+                card.onclick = () => selectLeft(item.id);
+                
+                card.innerHTML = `
+                    <span class="flex-1 pr-2">${item.text}</span>
+                    <span id="badge-left-${item.id}" class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-700 text-slate-400 hidden"></span>
+                `;
+                leftColumn.appendChild(card);
+            });
+
+            // Render Right Column (Shuffled)
+            rightColumn.innerHTML = "";
+            const shuffledRight = shuffleArray(q.right);
+            shuffledRight.forEach(item => {
+                card = document.createElement("div");
+                card.id = `right-${item.id}`;
+                card.className = "p-3 bg-slate-800/90 border border-slate-700 rounded-xl text-xs text-slate-200 cursor-pointer hover:border-emerald-500 transition flex justify-between items-center";
+                card.onclick = () => selectRight(item.id);
+
+                card.innerHTML = `
+                    <span class="flex-1 pr-2">${item.text}</span>
+                    <span id="badge-right-${item.id}" class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-700 text-slate-400 hidden"></span>
+                `;
+                rightColumn.appendChild(card);
+            });
+        }
+
+        function selectLeft(id) {
+            if (discussionBox.classList.contains("hidden") === false) return; // locked if submitted
+
+            selectedLeftId = id;
+            
+            // Highlight Left Selection
+            quizData[currentQuestionIndex].left.forEach(item => {
+                const el = document.getElementById(`left-${item.id}`);
+                if (item.id === id) {
+                    el.classList.add("selected-left");
+                } else {
+                    el.classList.remove("selected-left");
+                }
+            });
+
+            checkPairing();
+        }
+
+        function selectRight(id) {
+            if (discussionBox.classList.contains("hidden") === false) return;
+
+            selectedRightId = id;
+
+            // Highlight Right Selection
+            quizData[currentQuestionIndex].right.forEach(item => {
+                const el = document.getElementById(`right-${item.id}`);
+                if (item.id === id) {
+                    el.classList.add("selected-right");
+                } else {
+                    el.classList.remove("selected-right");
+                }
+            });
+
+            checkPairing();
+        }
+
+        function checkPairing() {
+            if (selectedLeftId && selectedRightId) {
+                // Pair them
+                // Remove existing right assignment if already matched
+                Object.keys(userMatches).forEach(k => {
+                    if (userMatches[k] === selectedRightId) {
+                        delete userMatches[k];
+                    }
+                });
+
+                userMatches[selectedLeftId] = selectedRightId;
+
+                // Update UI badges
+                updateMatchBadges();
+
+                // Clear selection
+                selectedLeftId = null;
+                selectedRightId = null;
+
+                document.querySelectorAll(".selected-left").forEach(el => el.classList.remove("selected-left"));
+                document.querySelectorAll(".selected-right").forEach(el => el.classList.remove("selected-right"));
+
+                // Enable submit if all left items matched
+                const q = quizData[currentQuestionIndex];
+                if (Object.keys(userMatches).length === q.left.length) {
+                    submitBtn.disabled = false;
+                }
+            }
+        }
+
+        function updateMatchBadges() {
+            const q = quizData[currentQuestionIndex];
+
+            // Reset all badges
+            q.left.forEach(l => {
+                const badge = document.getElementById(`badge-left-${l.id}`);
+                badge.classList.add("hidden");
+                document.getElementById(`left-${l.id}`).classList.remove("matched-pair");
+            });
+            q.right.forEach(r => {
+                const badge = document.getElementById(`badge-right-${r.id}`);
+                badge.classList.add("hidden");
+                document.getElementById(`right-${r.id}`).classList.remove("matched-pair");
+            });
+
+            // Set new badges
+            let pairNum = 1;
+            Object.keys(userMatches).forEach(lId => {
+                const rId = userMatches[lId];
+
+                const lBadge = document.getElementById(`badge-left-${lId}`);
+                const rBadge = document.getElementById(`badge-right-${rId}`);
+
+                if (lBadge && rBadge) {
+                    lBadge.innerText = `Pasangan ${pairNum}`;
+                    lBadge.classList.remove("hidden");
+                    lBadge.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-blue-900 text-blue-300 font-bold";
+
+                    rBadge.innerText = `Pasangan ${pairNum}`;
+                    rBadge.classList.remove("hidden");
+                    rBadge.className = "text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-900 text-emerald-300 font-bold";
+
+                    document.getElementById(`left-${lId}`).classList.add("matched-pair");
+                    document.getElementById(`right-${rId}`).classList.add("matched-pair");
+                }
+                pairNum++;
+            });
+        }
+
+        resetBtn.onclick = () => {
+            if (discussionBox.classList.contains("hidden") === false) return;
+            userMatches = {};
+            selectedLeftId = null;
+            selectedRightId = null;
+            submitBtn.disabled = true;
+            updateMatchBadges();
+        };
+
+        // Submit Question & Show Answer Key / Discussion
+        submitBtn.onclick = () => {
+            const q = quizData[currentQuestionIndex];
+            let correctCount = 0;
+            const totalPairs = q.left.length;
+
+            correctPairsList.innerHTML = "";
+
+            q.left.forEach(leftItem => {
+                const userRightId = userMatches[leftItem.id];
+                const correctRightId = q.key[leftItem.id];
+
+                const userRightItem = q.right.find(r => r.id === userRightId);
+                const correctRightItem = q.right.find(r => r.id === correctRightId);
+
+                const isCorrect = userRightId === correctRightId;
+                if (isCorrect) correctCount++;
+
+                const pairRow = document.createElement("div");
+                pairRow.className = `p-2 rounded border flex flex-col md:flex-row justify-between items-start md:items-center gap-1 ${
+                    isCorrect ? "bg-emerald-950/40 border-emerald-800/60 text-emerald-300" : "bg-red-950/40 border-red-800/60 text-red-300"
+                }`;
+
+                pairRow.innerHTML = `
+                    <div>
+                        <span class="font-bold text-slate-200">${leftItem.text}</span> 
+                        <i class="fas fa-arrow-right mx-1 text-slate-500"></i> 
+                        <span class="${isCorrect ? 'text-emerald-300 font-bold' : 'line-through text-red-400'}">${userRightItem ? userRightItem.text : 'Tidak dijawab'}</span>
+                    </div>
+                    ${!isCorrect ? `<div class="text-[11px] text-emerald-400 font-semibold mt-1 md:mt-0"><i class="fas fa-check-circle"></i> Kunci: ${correctRightItem.text}</div>` : `<div class="text-[11px] text-emerald-400"><i class="fas fa-check"></i> Tepat</div>`}
+                `;
+                correctPairsList.appendChild(pairRow);
+            });
+
+            const questionScore = Math.round((correctCount / totalPairs) * 100);
+            scoreBadge.innerText = `Skor Soal Ini: ${questionScore}% (${correctCount}/${totalPairs} Tepat)`;
+            discussionText.innerText = q.discussion;
+
+            if (!answeredQuestions.has(q.id)) {
+                answeredQuestions.add(q.id);
+                totalScoreSum += questionScore;
+                totalScoreEl.innerText = Math.round(totalScoreSum / answeredQuestions.size);
+            }
+
+            discussionBox.classList.remove("hidden");
+            submitBtn.disabled = true;
+        };
+
+        nextQBtn.onclick = () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                loadQuestion(currentQuestionIndex + 1);
+            } else {
+                alert(`Selamat! Anda telah menyelesaikan seluruh 20 soal kuis menjodohkan Pendidikan Pancasila. Skor rata-rata Anda: ${totalScoreEl.innerText}`);
+            }
+        };
+
+        // Initialize First Question
+        loadQuestion(0);
+    </script>
+</body>
+</html>
